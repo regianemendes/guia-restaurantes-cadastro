@@ -1,13 +1,20 @@
+import 'package:guia_restaurantes/models/user.dart';
+import 'package:guia_restaurantes/data/repositories/user_repository.dart';
+import 'package:guia_restaurantes/data/network/requester.dart';
+
 class SignUpViewModel {
-  // Nome: obrigatório, com pelo menos 3 letras
+
+  final UserRepository _repository = UserRepository();
+
+  // Valida nome: não pode ser vazio e precisa ter pelo menos 3 letras.
   String? validateName(String? value) {
     final name = value?.trim() ?? '';
-    if (name.isEmpty) return 'Informe o seu nome';
+    if (name.isEmpty) return 'Informe seu nome';
     if (name.length < 3) return 'O nome deve ter pelo menos 3 letras';
     return null;
   }
 
-  // E-mail: obrigatório, no formato nome@dominio.com
+  // Valida e-mail: verifica se está vazio e se segue o formato padrão (ex@domínio.com).
   String? validateEmail(String? value) {
     final email = value?.trim() ?? '';
     if (email.isEmpty) return 'Informe o seu e-mail';
@@ -17,7 +24,7 @@ class SignUpViewModel {
     return null;
   }
 
-  // Celular: obrigatório, com DDD e 9 dígitos (11 números no total)
+  // Valida celular: remove símbolos e exige exatamente 11 dígitos (DDD + 9 números).
   String? validatePhone(String? value) {
     final digits = (value ?? '').replaceAll(RegExp(r'\D'), '');
     if (digits.isEmpty) return 'Informe o seu celular';
@@ -25,7 +32,7 @@ class SignUpViewModel {
     return null;
   }
 
-  // Senha: obrigatória, com pelo menos 6 caracteres
+  // Valida senha: não pode ser vazia e exige no mínimo 6 caracteres.
   String? validatePassword(String? value) {
     final password = value ?? '';
     if (password.isEmpty) return 'Crie uma senha';
@@ -33,10 +40,33 @@ class SignUpViewModel {
     return null;
   }
 
-  // Confirmação: obrigatória e igual à senha
+  // Valida confirmação: verifica se foi preenchido e se é idêntico à senha digitada.
   String? validatePasswordConfirmation(String? value, String password) {
     if (value == null || value.isEmpty) return 'Confirme a sua senha';
     if (value != password) return 'As senhas não conferem';
     return null;
+  }
+
+  Future<String?> register({
+    required String name,
+    required String email,
+    required String phone,
+    required String password }) async {
+
+    // monta o usuário com os dados que a View entregou
+    final user = User(
+        name: name,
+        email: email,
+        phone: phone,
+        password: password);
+
+    try {
+      await _repository.createUser(user);
+      return null;                          // deu certo
+    } on RequestException catch (e) {
+      return e.message;                     // a mensagem que o Requester montou
+    } catch (_) {
+      return 'Não foi possível criar a conta. Tente novamente.';
+    }
   }
 }
